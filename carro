@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Novos Fitados Economia</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: radial-gradient(circle at top, #1d1d1d 0%, #080808 60%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bg-lights {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,0,0,0.12), transparent 20%),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.08), transparent 20%),
+    radial-gradient(circle at 50% 80%, rgba(255,0,0,0.08), transparent 20%);
+  filter: blur(20px);
+}
+
+.container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.topbar {
+  text-align: center;
+}
+
+.topbar h1 {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #fff, #ff4d4d, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.topbar p {
+  color: #999;
+  margin-top: 6px;
+  letter-spacing: 2px;
+  font-size: 18px; /* Aumentado um pouco para ler melhor o ano */
+  font-weight: bold;
+}
+
+.roulette-wrapper {
+  position: relative;
+  width: 650px;
+  height: 650px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pointer {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-top: 42px solid #ffffff;
+  z-index: 50;
+  filter: drop-shadow(0 0 15px rgba(255,255,255,0.6));
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 10px #222,
+    0 0 0 18px #500,
+    0 0 50px rgba(255,0,0,0.4),
+    inset 0 0 40px rgba(0,0,0,0.8);
+}
+
+.center-logo {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #444, #111);
+  border: 6px solid #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  overflow: hidden;
+  text-shadow: 0 0 15px rgba(255,255,255,0.5);
+  box-shadow:
+    0 0 25px rgba(255,255,255,0.15),
+    inset 0 0 30px rgba(0,0,0,0.8);
+  transition: all 0.3s;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+button {
+  background: linear-gradient(to bottom, #ff4d4d, #8a0000);
+  border: none;
+  color: white;
+  padding: 16px 46px;
+  font-size: 18px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  box-shadow: 0 8px 25px rgba(255,0,0,0.3);
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hidden-config {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-lights"></div>
+
+<div class="container">
+  <div class="topbar">
+    <h1>Novos Fitados Economia</h1>
+    <p>2024/2027</p>
+  </div>
+
+  <div class="roulette-wrapper">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="1400" height="1400"></canvas>
+    <!-- Alterado para ter um ID para podermos injetar o número aqui -->
+    <div class="center-logo" id="centerResult"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="spinWheel()" id="spinBtn">GIRAR ROLETA</button>
+    <div id="winnerName" style="font-size:22px;font-weight:700;letter-spacing:1px;min-height:28px;color:#fff;"></div>
+  </div>
+</div>
+
+<!-- =========================================================
+PARÂMETRO ESCONDIDO
+DEFINE ONDE A ROLETA VAI PARAR (Qualquer número de 1 a 32).
+Para alterares o vencedor, abre este ficheiro no Bloco de Notas 
+e muda o número na linha abaixo. Depois faz refresh no browser.
+========================================================= -->
+<div class="hidden-config">
+<script>
+// ============================================================
+// CONFIGURAÇÃO DOS FITADOS
+// ============================================================
+
+// RESULTADO FORÇADO:
+// Coloca aqui a posição (1 a 32) correspondente ao nome vencedor.
+const FORCED_RESULT = 14;
+
+// IMAGEM QUE APARECE NO CENTRO NO FINAL:
+// Exemplo: "logo.png"
+// Se estiver na mesma pasta deste HTML, basta colocar o nome do ficheiro.
+const CENTER_IMAGE = "mlf.jpeg";
+
+// NOMES DOS 32 FITADOS
+// A ordem corresponde às casas 1 a 32 da roleta.
+// Substitui os exemplos pelos nomes reais.
+const NAMES = [
+  "Afonso Ferros",
+  "Ana Rebelo",
+  "Ana Dorokhova",
+  "Beatriz Barbosa",
+  "Carolina Sousa",
+  "Catarina Jesus",
+  "Diogo Simões",
+  "Filipa Sampaio",
+  "Francisca Morais",
+  "Francisco Carvalhinha",
+  "Francisco Nunes",
+  "Gabriel Azevedo",
+  "Helena Melo",
+  "Inês Falcão",
+  "Joana Carreira",
+  "Juliana Fernandes",
+  "Lana Mei",
+  "Lara Antunes",
+  "Lara Fernandes",
+  "Liliana Alves",
+  "Maria Rocha",
+  "Martim Fernandes",
+  "Martim Ferreira",
+  "Matilde Marques",
+  "Miguel Pinheiro",
+  "Mónica Gomes",
+  "Natacha Correia",
+  "Rita Alves",
+  "Salomé Triães",
+  "Simão Ferreira",
+  "Sofia Senhora",
+  "Nome 32"
+];
+</script>
+</div>
+
+<script>
+// Criar array ordenado de 1 a 32
+const numbers = Array.from({length: 32}, (_, i) => i + 1);
+
+// Números ímpares são vermelhos, pares são brancos
+const redNumbers = [
+  1,3,5,7,9,11,13,15,
+  17,19,21,23,25,27,29,31
+];
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const radius = 650;
+const slice = (Math.PI * 2) / numbers.length;
+
+let currentRotation = 0;
+let spinning = false;
+let revealedIndex = -1; // -1 = nenhum nome revelado (tudo com "?")
+
+function getColor(n){
+  return redNumbers.includes(n) ? "#c40000" : "#f4f4f4";
+}
+
+function getTextColor(n){
+  return redNumbers.includes(n) ? "#ffffff" : "#111111";
+}
+
+function drawWheel(rotation = 0){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Outer ring (borda preta)
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius + 18, 0, Math.PI * 2);
+  ctx.fillStyle = "#111";
+  ctx.fill();
+
+  // Metallic ring
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
+  ctx.fillStyle = "#888";
+  ctx.fill();
+
+  // Desenhar as fatias de 1 a 32
+  for(let i = 0; i < numbers.length; i++){
+    const start = rotation + (i * slice) - Math.PI / 2;
+    const end = start + slice;
+    const num = numbers[i];
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, start, end);
+    ctx.closePath();
+
+    ctx.fillStyle = getColor(num);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#111";
+    ctx.stroke();
+
+    // Texto radial: escrito do centro para a borda da roleta
+    const angle = start + slice / 2;
+    const innerR = 380;            // onde o texto começa (junto ao centro)
+    const maxLen = radius - 100 - innerR; // comprimento máximo disponível
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(angle);
+    ctx.fillStyle = getTextColor(num);
+    ctx.textBaseline = "middle";
+
+    if (i === revealedIndex) {
+      // Só o vencedor mostra o nome (reduz o tamanho se o nome for comprido)
+      let size = 38;
+      ctx.font = `bold ${size}px Arial`;
+      while (ctx.measureText(NAMES[num - 1]).width > maxLen && size > 14) {
+        size -= 2;
+        ctx.font = `bold ${size}px Arial`;
+      }
+      ctx.textAlign = "left";
+      ctx.fillText(NAMES[num - 1], innerR, 0);
+    } else {
+      // Todos os outros ficam com "?"
+      ctx.font = "bold 52px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("?", innerR + maxLen / 2, 0);
+    }
+    ctx.restore();
+  }
+
+  // Sombra interna e anéis centrais
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 260, 0, Math.PI * 2);
+  ctx.fillStyle = "#0b0b0b";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 230, 0, Math.PI * 2);
+  ctx.fillStyle = "#151515";
+  ctx.fill();
+}
+
+drawWheel();
+
+// Curva de animação para abrandamento realista
+function easeOutCubic(t){
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function spinWheel(){
+  if(spinning) return;
+  spinning = true;
+
+  const btn = document.getElementById("spinBtn");
+  btn.disabled = true;
+  
+  const centerEl = document.getElementById("centerResult");
+  // Ocultar texto no centro enquanto roda
+  centerEl.innerHTML = ""; 
+  document.getElementById("winnerName").textContent = ""; 
+  revealedIndex = -1; // volta a esconder o nome ao girar
+
+  const result = FORCED_RESULT;
+  const targetIndex = numbers.indexOf(result);
+
+  // Calcular o ângulo onde a fatia deve parar para ficar exatamente no topo (-90 graus)
+  const targetAngle = (Math.PI * 2) - (targetIndex * slice) - (slice / 2);
+
+  // Calcular distância exata que falta percorrer a partir da rotação atual
+  const currentMod = currentRotation % (Math.PI * 2);
+  let angleToAdd = targetAngle - currentMod;
+  if (angleToAdd < 0) angleToAdd += Math.PI * 2;
+
+  const extraSpins = 10; // Número de voltas completas
+  const finalRotation = currentRotation + (Math.PI * 2 * extraSpins) + angleToAdd;
+  const startRotation = currentRotation;
+
+  const duration = 6500; // 7.5 segundos de animação
+  const startTime = performance.now();
+
+  function animate(now){
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutCubic(progress);
+
+    currentRotation = startRotation + (finalRotation - startRotation) * eased;
+    drawWheel(currentRotation);
+
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    } else {
+      currentRotation = finalRotation % (Math.PI * 2); 
+      revealedIndex = targetIndex;
+      drawWheel(currentRotation); // revela o nome vencedor na roleta
+      // Mostrar a imagem no centro assim que a roleta para
+      document.getElementById("winnerName").textContent = NAMES[result - 1];
+      centerEl.innerHTML = `<img src="${CENTER_IMAGE}" alt="${NAMES[result - 1]}"
+             style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
+      `;
+      spinning = false;
+      btn.disabled = false;
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+</script>
+
+</body>
+</html>
