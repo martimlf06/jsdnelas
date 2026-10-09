@@ -13,11 +13,12 @@
 }
 
 body {
-  background: radial-gradient(circle at top, #1d1d1d 0%, #080808 60%);
+  background: radial-gradient(circle at top, #f1f0f0 0%, #f1f0f0 60%);
   min-height: 100vh;
   font-family: 'Segoe UI', sans-serif;
   color: white;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto; /* permite scroll se o ecrã for pequeno */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,9 +52,7 @@ body {
   font-weight: 700;
   letter-spacing: 4px;
   text-transform: uppercase;
-  background: linear-gradient(to right, #fff, #ff4d4d, #fff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #c40000;
 }
 
 .topbar p {
@@ -68,6 +67,7 @@ body {
   position: relative;
   width: 650px;
   height: 650px;
+  margin: 100px 0 30px; /* espaço extra entre o título, a roleta e o botão */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,7 +123,7 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 100px;
 }
 
 button {
@@ -139,6 +139,7 @@ button {
   text-transform: uppercase;
   box-shadow: 0 8px 25px rgba(255,0,0,0.3);
   transition: 0.2s;
+  min-width: 400px;
 }
 
 button:hover {
@@ -162,7 +163,7 @@ button:disabled {
 
 <div class="container">
   <div class="topbar">
-    <h1>Novos Fitados Economia</h1>
+    <h1>Novos Fitados de Economia</h1>
     <p>2024/2027</p>
   </div>
 
@@ -175,7 +176,6 @@ button:disabled {
 
   <div class="controls">
     <button onclick="spinWheel()" id="spinBtn">GIRAR ROLETA</button>
-    <div id="winnerName" style="font-size:22px;font-weight:700;letter-spacing:1px;min-height:28px;color:#fff;"></div>
   </div>
 </div>
 
@@ -198,7 +198,7 @@ const FORCED_RESULT = 14;
 // IMAGEM QUE APARECE NO CENTRO NO FINAL:
 // Exemplo: "logo.png"
 // Se estiver na mesma pasta deste HTML, basta colocar o nome do ficheiro.
-const CENTER_IMAGE = "mlf.jpeg";
+//const CENTER_IMAGE = "mlf.jpeg";
 
 // NOMES DOS 32 FITADOS
 // A ordem corresponde às casas 1 a 32 da roleta.
@@ -246,8 +246,8 @@ const numbers = Array.from({length: 32}, (_, i) => i + 1);
 
 // Números ímpares são vermelhos, pares são brancos
 const redNumbers = [
-  1,3,5,7,9,11,13,15,
-  17,19,21,23,25,27,29,31
+  2,4,6,8,10,12,14,16,
+  18,20,22,24,26,28,30,32
 ];
 
 const canvas = document.getElementById("wheel");
@@ -262,10 +262,12 @@ let spinning = false;
 let revealedIndex = -1; // -1 = nenhum nome revelado (tudo com "?")
 
 function getColor(n){
+  if (n === 32) return "#c40000"; // 
   return redNumbers.includes(n) ? "#c40000" : "#f4f4f4";
 }
 
 function getTextColor(n){
+  if (n === 32) return "#ffffff";
   return redNumbers.includes(n) ? "#ffffff" : "#111111";
 }
 
@@ -360,7 +362,7 @@ function spinWheel(){
   const centerEl = document.getElementById("centerResult");
   // Ocultar texto no centro enquanto roda
   centerEl.innerHTML = ""; 
-  document.getElementById("winnerName").textContent = ""; 
+  btn.textContent = "GIRAR ROLETA";
   revealedIndex = -1; // volta a esconder o nome ao girar
 
   const result = FORCED_RESULT;
@@ -395,11 +397,7 @@ function spinWheel(){
       currentRotation = finalRotation % (Math.PI * 2); 
       revealedIndex = targetIndex;
       drawWheel(currentRotation); // revela o nome vencedor na roleta
-      // Mostrar a imagem no centro assim que a roleta para
-      document.getElementById("winnerName").textContent = NAMES[result - 1];
-      centerEl.innerHTML = `<img src="${CENTER_IMAGE}" alt="${NAMES[result - 1]}"
-             style="width:100%;height:100%;object-fit:contain;border-radius:50%;">
-      `;
+      btn.textContent = NAMES[result - 1]; // nome do vencedor dentro do botão
       spinning = false;
       btn.disabled = false;
     }
