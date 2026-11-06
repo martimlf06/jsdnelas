@@ -324,7 +324,7 @@ function drawWheel(rotation = 0){
       // Fatias reveladas mostram o nome (reduz o tamanho se o nome for comprido)
       let size = 30;
       ctx.font = `bold ${size}px Arial`;
-      while (ctx.measureText(NAMES[num - 1]).width > maxLen && size > 14) {
+      while (ctx.measureText(NAMES[num - 1]).width > maxLen && size > 20) {
         size -= 2;
         ctx.font = `bold ${size}px Arial`;
       }
